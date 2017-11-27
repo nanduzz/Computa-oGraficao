@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<!--
+To change this license header, choose License Headers in Project Properties.
+To change this template file, choose Tools | Templates
+and open the template in the editor.
+-->
+<html>
+    <head>
+        <title>Trabalho de Computação Grafica</title>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <script src="https://code.jquery.com/jquery-2.2.4.min.js"></script>
+
+    </head>
+    <body>
+        <h1 style="text-align: center">Trabalho CG</h1>
+        <canvas id="myCanvas" width="500" height="500" style="border:1px solid #000000;" onclick="relMouseCoords(event)"></canvas> 
+        <button onclick="alteraTipo('retangulo')">Retangulo</button>
+        <button onclick="alteraTipo('circulo')">Circulo</button>
+        <button onclick="alteraTipo('linha')">Linha</button>
+        <button onclick="alteraTipo('triangulo')">Triangulo</button>
+    </body>
+
+    <script type="text/javascript">
+        const X = 0;
+        const Y = 1;
+
+        var tipo = "livre";
+
+        var canvas = document.getElementById("myCanvas");
+        var ctx = canvas.getContext("2d");
+
+        var nVertices = 0;
+        var vertices = [];
+        var formas = [];
+
+
+        function desenhaFormaLivre(ctx, forma) {
+            for (var i = 0; i < forma.length; i++) {
+                if (i === forma.length - 1) {
+                    drawLine(ctx, forma[i][X], forma[i][Y], forma[0][X], forma[0][Y]);
+                } else {
+                    drawLine(ctx, forma[i][X], forma[i][Y], forma[i + 1][X], forma[i + 1][Y])
+                }
+            }
+            adicionaArrayFormas();
+        }
+
+        $(function () {
+//            desenhaFormaLivre(ctx, retangulo);
+        });
+
+        function desenhaLinha(){
+            desenhaFormaLivre(ctx, vertices);
+            adicionaArrayFormas();
+        }
+
+        function drawLine(ctx, xA, yA, xB, yB) {
+            ctx.moveTo(xA, yA);
+            ctx.lineTo(xB, yB);
+            ctx.stroke();
+        }
+
+        function canvasParaRetangulo() {
+            $('#myCanvas').on('click', function (e) {
+                desenhaRetangulo(e);
+            });
+        }
+
+        function desenhaRetangulo() {
+            arrayAux = [
+                [vertices[0][X], vertices[0][Y]],
+                [vertices[1][X], vertices[0][Y]],
+                [vertices[1][X], vertices[1][Y]],
+                [vertices[0][X], vertices[1][Y]],
+            ];
+            vertices = arrayAux;
+            desenhaFormaLivre(ctx, arrayAux);
+        }
+
+        function desenhaCirculo() {
+            var raio = calculaRaio();
+            ctx.beginPath();
+            ctx.arc(vertices[0][X], vertices[0][Y], raio, 0, 2 * Math.PI);
+            ctx.stroke();
+
+            adicionaArrayFormas();
+        }
+        
+        function desenhaTriangulo(){
+            desenhaFormaLivre(ctx, vertices);
+        }
+
+        function calculaRaio() {
+            var a = vertices[0][X] - vertices[1][X];
+            var b = vertices[0][Y] - vertices[1][Y];
+
+            var c = Math.pow(a, 2) + Math.pow(b, 2);
+            return Math.sqrt(c);
+
+
+        }
+
+        function adicionaArrayFormas() {
+            formas.push(vertices);
+            limpaVertices();
+        }
+
+        function canvasOnClick(event) {
+            relMouseCoords(event);
+        }
+
+
+        function relMouseCoords(event) {
+            var totalOffsetX = 0;
+            var totalOffsetY = 0;
+            var canvasX = 0;
+            var canvasY = 0;
+            var currentElement = this;
+
+            do {
+                totalOffsetX += currentElement.offsetLeft - currentElement.scrollLeft;
+                totalOffsetY += currentElement.offsetTop - currentElement.scrollTop;
+            } while (currentElement = currentElement.offsetParent)
+
+            canvasX = event.pageX - totalOffsetX;
+            canvasY = event.pageY - totalOffsetY;
+
+            console.log({x: canvasX, y: canvasY});
+            vertices[nVertices++] = [canvasX, canvasY];
+            trataForma();
+        }
+
+        function trataForma() {
+            if (tipo === "retangulo" && nVertices === 2) {
+                desenhaRetangulo();
+            } else if (tipo === "circulo" && nVertices === 2) {
+                desenhaCirculo();
+            } else if (tipo === "linha" && nVertices === 2) {
+                desenhaLinha();
+            } else if (tipo === "triangulo" && nVertices === 3) {
+                desenhaTriangulo();
+            }
+        }
+
+        function limpaVertices() {
+            nVertices = 0;
+            vertices = [];
+        }
+
+        function alteraTipo(novoTipo) {
+            limpaVertices();
+            tipo = novoTipo;
+        }
+
+
+        HTMLCanvasElement.prototype.relMouseCoords = relMouseCoords;
+
+
+        $(window).on('keydown', function (e) {
+            if (e.which === 13) {
+                desenhaFormaLivre(ctx, vertices);
+
+//                nVertices = 0;
+//                vertices = [];
+            }
+        });
+
+    </script>
+</html>
