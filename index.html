@@ -9,16 +9,40 @@ and open the template in the editor.
         <title>Trabalho de Computação Grafica</title>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+        <link href="css/bootstrap.min.css" rel="stylesheet">
         <script src="https://code.jquery.com/jquery-2.2.4.min.js"></script>
+        <!--<script src="js/bootstrap.min.js"></script>-->
 
     </head>
     <body>
         <h1 style="text-align: center">Trabalho CG</h1>
-        <canvas id="myCanvas" width="500" height="500" style="border:1px solid #000000;" onclick="relMouseCoords(event)"></canvas> 
-        <button onclick="alteraTipo('retangulo')">Retangulo</button>
-        <button onclick="alteraTipo('circulo')">Circulo</button>
-        <button onclick="alteraTipo('linha')">Linha</button>
-        <button onclick="alteraTipo('triangulo')">Triangulo</button>
+        <div class="container">
+            <div class="row">
+                <div class="col-2">
+                    <button class="btn btn-primary btn-block" onclick="alteraTipo('retangulo')">Retangulo</button>
+                    <br/>
+                    <button class="btn btn-primary btn-block" onclick="alteraTipo('circulo')">Circulo</button>
+                    <br/>
+                    <button class="btn btn-primary btn-block" onclick="alteraTipo('linha')">Linha</button>
+                    <br/>
+                    <button class="btn btn-primary btn-block" onclick="alteraTipo('triangulo')">Triangulo</button>
+                    <br/>
+                </div>
+                <div class="col-8">
+                    <canvas id="myCanvas" width="500" height="500" style="border:1px solid #000000;" onclick="relMouseCoords(event)"></canvas> 
+                </div>
+                <div class="col-md-2" id="lista-formas">
+
+                </div>
+            </div>
+        </div>
+        <br/>
+        <button class="btn btn-primary" onclick="translacao()">Translação</button>
+        <button class="btn btn-primary" onclick="alteraEscala()">Escala</button>
+        <button class="btn btn-primary" onclick="rotaciona()">Rotacionar</button>
+        <button class="btn btn-primary" onclick="fit()">Enquadrar</button>
+        <!--<button class="btn btn-primary" onclick="limpaCanvas()">Limpar</button>-->
     </body>
 
     <script type="text/javascript">
@@ -33,9 +57,10 @@ and open the template in the editor.
         var nVertices = 0;
         var vertices = [];
         var formas = [];
+        var formaSelecionada = -1;
 
 
-        function desenhaFormaLivre(ctx, forma) {
+        function desenhaFormaLivre(ctx, forma, nomeForma, redesenhando) {
             for (var i = 0; i < forma.length; i++) {
                 if (i === forma.length - 1) {
                     drawLine(ctx, forma[i][X], forma[i][Y], forma[0][X], forma[0][Y]);
@@ -43,16 +68,19 @@ and open the template in the editor.
                     drawLine(ctx, forma[i][X], forma[i][Y], forma[i + 1][X], forma[i + 1][Y])
                 }
             }
-            adicionaArrayFormas();
+            if (!redesenhando) {
+                adicionaArrayFormas(nomeForma);
+            }
         }
+        function desenhaLinha(forma) {
+            var redesenhando = true;
+            if (!forma) {
+                forma = vertices;
+                redesenhando = false;
+            }
 
-        $(function () {
-//            desenhaFormaLivre(ctx, retangulo);
-        });
+            desenhaFormaLivre(ctx, forma, "Linha", redesenhando);
 
-        function desenhaLinha(){
-            desenhaFormaLivre(ctx, vertices);
-            adicionaArrayFormas();
         }
 
         function drawLine(ctx, xA, yA, xB, yB) {
@@ -67,49 +95,78 @@ and open the template in the editor.
             });
         }
 
-        function desenhaRetangulo() {
-            arrayAux = [
-                [vertices[0][X], vertices[0][Y]],
-                [vertices[1][X], vertices[0][Y]],
-                [vertices[1][X], vertices[1][Y]],
-                [vertices[0][X], vertices[1][Y]],
-            ];
-            vertices = arrayAux;
-            desenhaFormaLivre(ctx, arrayAux);
+        function desenhaRetangulo(forma) {
+            var redesenhando = false;
+            if (!forma) {
+                arrayAux = [
+                    [vertices[0][X], vertices[0][Y]],
+                    [vertices[1][X], vertices[0][Y]],
+                    [vertices[1][X], vertices[1][Y]],
+                    [vertices[0][X], vertices[1][Y]],
+                ];
+                vertices = arrayAux;
+            } else {
+                arrayAux = forma;
+                redesenhando = true;
+            }
+            desenhaFormaLivre(ctx, arrayAux, "Retangulo", redesenhando);
         }
 
-        function desenhaCirculo() {
-            var raio = calculaRaio();
+        function desenhaCirculo(forma) {
             ctx.beginPath();
-            ctx.arc(vertices[0][X], vertices[0][Y], raio, 0, 2 * Math.PI);
+            if (!forma) {
+                var raio = calculaRaio(vertices);
+                ctx.arc(vertices[0][X], vertices[0][Y], raio, 0, 2 * Math.PI);
+                adicionaArrayFormas("Circulo");
+            } else {
+                var raio = calculaRaio(forma);
+                ctx.arc(forma[0][X], forma[0][Y], raio, 0, 2 * Math.PI);
+            }
             ctx.stroke();
-
-            adicionaArrayFormas();
-        }
-        
-        function desenhaTriangulo(){
-            desenhaFormaLivre(ctx, vertices);
         }
 
-        function calculaRaio() {
-            var a = vertices[0][X] - vertices[1][X];
-            var b = vertices[0][Y] - vertices[1][Y];
+        function desenhaTriangulo(forma) {
+            var redesenhando = true;
+            if (!forma) {
+                forma = vertices;
+                redesenhando = false;
+            }
+
+            desenhaFormaLivre(ctx, forma, "Triangulo", redesenhando);
+
+        }
+
+        function calculaRaio(forma) {
+            var a = forma[0][X] - forma[1][X];
+            var b = forma[0][Y] - forma[1][Y];
 
             var c = Math.pow(a, 2) + Math.pow(b, 2);
             return Math.sqrt(c);
-
-
         }
 
-        function adicionaArrayFormas() {
-            formas.push(vertices);
+        function adicionaArrayFormas(nomeForma) {
+            for (var i = 0; i < vertices.length; i++) {
+                vertices[i].push(1);
+            }
+            formas.push([vertices, nomeForma]);
+            console.log(formas);
             limpaVertices();
+
+            listaForma(formas[formas.length - 1], formas.length - 1);
+
+        }
+        function listaForma(forma, id) {
+            $("#lista-formas").append(
+                    $("<p/>")
+                    .text((id + 1) + " - " + forma[1])
+                    .attr("data-forma-id", id)
+                    .addClass('forma')
+                    );
         }
 
         function canvasOnClick(event) {
             relMouseCoords(event);
         }
-
 
         function relMouseCoords(event) {
             var totalOffsetX = 0;
@@ -154,12 +211,108 @@ and open the template in the editor.
         }
 
 
+        function translacao() {
+            var dx = 100;
+            var dy = 50;
+            var matrizTranslacao = [
+                [1, 0, dx],
+                [0, 1, dy],
+                [0, 0, 1]
+            ];
+
+            var matrixResultado = multiplicaMatriz(matrizTranslacao, transposta(formas[formaSelecionada][0]))
+            formas[formaSelecionada][0] = transposta(matrixResultado);
+            console.log(transposta(matrixResultado));
+            limpaCanvas();
+            redesenha();
+        }
+
+        function limpaCanvas() {
+            ctx.beginPath();
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            console.log("clear");
+        }
+
+        function redesenha() {
+            for (var i = 0; i < formas.length; i++) {
+                if (formas[i][1] === "Retangulo") {
+                    desenhaRetangulo(formas[i][0]);
+                } else if (formas[i][1] === "Circulo") {
+                    desenhaCirculo(formas[i][0]);
+                } else if (formas[i][1] === "Linha") {
+                    desenhaLinha(formas[i][0]);
+                } else if (formas[i][1] === "Triangulo") {
+                    desenhaTriangulo(formas[i][0]);
+                }
+            }
+
+        }
+
+        function multiplicaMatriz(a, b) {
+            var aNumRows = a.length, aNumCols = a[0].length,
+                    bNumRows = b.length, bNumCols = b[0].length,
+                    m = new Array(aNumRows);  // initialize array of rows
+            for (var r = 0; r < aNumRows; ++r) {
+                m[r] = new Array(bNumCols); // initialize the current row
+                for (var c = 0; c < bNumCols; ++c) {
+                    m[r][c] = 0;             // initialize the current cell
+                    for (var i = 0; i < aNumCols; ++i) {
+                        m[r][c] += a[r][i] * b[i][c];
+                    }
+                }
+            }
+            return m;
+        }
+
+        function transposta(a) {
+
+            // Calculate the width and height of the Array
+            var w = a.length || 0;
+            var h = a[0] instanceof Array ? a[0].length : 0;
+
+            // In case it is a zero matrix, no transpose routine needed.
+            if (h === 0 || w === 0) {
+                return [];
+            }
+
+            /**
+             * @var {Number} i Counter
+             * @var {Number} j Counter
+             * @var {Array} t Transposed data is stored in this array.
+             */
+            var i, j, t = [];
+
+            // Loop through every item in the outer array (height)
+            for (i = 0; i < h; i++) {
+
+                // Insert a new row (array)
+                t[i] = [];
+
+                // Loop through every item per item in outer array (width)
+                for (j = 0; j < w; j++) {
+
+                    // Save transposed data.
+                    t[i][j] = a[j][i];
+                }
+            }
+
+            return t;
+        }
+
+
+
         HTMLCanvasElement.prototype.relMouseCoords = relMouseCoords;
+
+
+        $("#lista-formas").on('click', '.forma', function () {
+            formaSelecionada = $(this).data('forma-id');
+            console.log(formaSelecionada);
+        });
 
 
         $(window).on('keydown', function (e) {
             if (e.which === 13) {
-                desenhaFormaLivre(ctx, vertices);
+                desenhaFormaLivre(ctx, vertices, "Forma Livre");
 
 //                nVertices = 0;
 //                vertices = [];
@@ -167,4 +320,4 @@ and open the template in the editor.
         });
 
     </script>
-</html>
+</html>     
