@@ -14,6 +14,13 @@ and open the template in the editor.
         <script src="https://code.jquery.com/jquery-2.2.4.min.js"></script>
         <!--<script src="js/bootstrap.min.js"></script>-->
 
+        <style>
+            .forma-selecionada{
+                background: #007bff;
+                color:#fff;
+            }
+        </style>
+
     </head>
     <body>
         <h1 style="text-align: center">Trabalho CG</h1>
@@ -39,7 +46,7 @@ and open the template in the editor.
         </div>
         <br/>
         <button class="btn btn-primary" onclick="translacao()">Translação</button>
-        <button class="btn btn-primary" onclick="alteraEscala()">Escala</button>
+        <button class="btn btn-primary" onclick="escala()">Escala</button>
         <button class="btn btn-primary" onclick="rotaciona()">Rotacionar</button>
         <button class="btn btn-primary" onclick="fit()">Enquadrar</button>
         <!--<button class="btn btn-primary" onclick="limpaCanvas()">Limpar</button>-->
@@ -211,9 +218,11 @@ and open the template in the editor.
         }
 
 
-        function translacao() {
-            var dx = 100;
-            var dy = 50;
+        function translacao(dx, dy) {
+            if (!dx && !dy) {
+                dx = parseFloat(prompt("Digite o deslocamento em X"));
+                dy = parseFloat(prompt("Digite o deslocamento em Y"));
+            }
             var matrizTranslacao = [
                 [1, 0, dx],
                 [0, 1, dy],
@@ -222,9 +231,63 @@ and open the template in the editor.
 
             var matrixResultado = multiplicaMatriz(matrizTranslacao, transposta(formas[formaSelecionada][0]))
             formas[formaSelecionada][0] = transposta(matrixResultado);
-            console.log(transposta(matrixResultado));
             limpaCanvas();
             redesenha();
+        }
+
+        function escala(sx, sy) {
+            if (!sx && !sy) {
+                sx = parseFloat(prompt("Digite a escala em X"));
+                sy = parseFloat(prompt("Digite a escala em Y"));
+            }
+            var matrizEscala = [
+                [sx, 0, 0],
+                [0, sy, 0],
+                [0, 0, 1]
+            ];
+
+            minX = formas[formaSelecionada][0][0][X];
+            minY = formas[formaSelecionada][0][0][Y];
+
+            translacao(minX * -1, minY * -1);
+            var matrizResultado = multiplicaMatriz(matrizEscala, transposta(formas[formaSelecionada][0]));
+            formas[formaSelecionada][0] = transposta(matrizResultado);
+            translacao(minX, minY);
+
+            limpaCanvas();
+            redesenha();
+        }
+
+        function rotaciona(graus) {
+
+            if (!graus) {
+                graus = parseFloat(prompt("Digite quantos graus no sentido horario deseja rotacionar"));
+            }
+            graus = toRadians(graus)
+            var matrizRotacao = [
+                [Math.cos(graus), -Math.sin(graus), 0],
+                [Math.sin(graus), Math.cos(graus), 0],
+                [0, 0, 1]
+            ];
+
+            console.log(matrizRotacao);
+            minX = formas[formaSelecionada][0][0][X];
+            minY = formas[formaSelecionada][0][0][Y];
+
+            translacao(minX * -1, minY * -1);
+            var matrizResultado = multiplicaMatriz(matrizRotacao, transposta(formas[formaSelecionada][0]));
+            formas[formaSelecionada][0] = transposta(matrizResultado);
+            translacao(minX, minY);
+
+            limpaCanvas();
+            redesenha();
+
+        }
+        function toDegrees(angle) {
+            return angle * (180 / Math.PI);
+        }
+        function toRadians(angle) {
+            return angle * (Math.PI / 180);
         }
 
         function limpaCanvas() {
@@ -305,15 +368,15 @@ and open the template in the editor.
 
 
         $("#lista-formas").on('click', '.forma', function () {
+            $.each($(this).siblings(), function (k, v) {
+                $(v).removeClass('forma-selecionada');
+            });
             formaSelecionada = $(this).data('forma-id');
-            console.log(formaSelecionada);
+            $(this).addClass("forma-selecionada");
         });
-
-
         $(window).on('keydown', function (e) {
             if (e.which === 13) {
                 desenhaFormaLivre(ctx, vertices, "Forma Livre");
-
 //                nVertices = 0;
 //                vertices = [];
             }
